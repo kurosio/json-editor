@@ -195,16 +195,12 @@
 					<label>Время в секундах для взаимодействия (опционально):</label>
 					<input type="number" name="move_to[cooldown]" placeholder="По умолчанию: 0" data-label="Кулдаун">
 					
-					<fieldset>
-						<legend>Необходимый предмет для завершения (опционально)</legend>
-						<div class="fieldset-content">
-							<label>ID предмета:</label>
-							<input type="number" name="move_to[required_item][id]" placeholder="ID предмета" data-label="ID требуемого предмета">
+					<label>Необходимый для завершения ID предмета (опционально):</label>
+					<input type="number" name="move_to[required_item][id]" placeholder="ID предмета" data-label="ID требуемого предмета">
 
-							<label>Количество:</label>
-							<input type="number" name="move_to[required_item][value]" placeholder="Количество" data-label="Количество требуемого предмета">
-						</div>
-					</fieldset>
+					<label>Необходимое количество предмета (опционально):</label>
+					<input type="number" name="move_to[required_item][value]" placeholder="Количество" data-label="Количество требуемого предмета">
+		
 				</div>
             </div>
         </fieldset>
