@@ -135,9 +135,18 @@
                 <label>Шаг (опционально):</label>
                 <input type="number" name="move_to[step]" placeholder="По умолчанию: 1" data-label="Шаг">
 
+                <label>Навигатор:</label>
+                <select name="move_to[navigator]" data-label="Навигатор">
+                    <option value="true" selected>Да (показывает полный путь)</option>
+                    <option value="false">Нет (показывает путь до области)</option>
+                </select>
+				
                 <label>Название цели (опционально):</label>
                 <input type="text" name="move_to[name]" placeholder="По умолчанию: Demands a bit of action" data-label="Название">
 
+                <label>Текст завершения (опционально):</label>
+                <textarea name="move_to[completion_text]" placeholder="Сообщение при завершении" data-label="Текст завершения"></textarea>
+				
                 <label>Координата X:</label>
                 <input type="number" name="move_to[x]" required placeholder="Координата X" data-label="X">
 
@@ -149,106 +158,72 @@
             </div>
         </fieldset>
 
-        <!-- дополнительное -->
-        <fieldset data-collapsed="true">
-            <legend>
-                Дополнительное
-                <button type="button" class="toggle-fieldset-btn" aria-label="Свернуть поле">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </legend>
-            <div class="fieldset-content">
-
-                <label>Навигатор:</label>
-                <select name="move_to[navigator]" data-label="Навигатор">
-                    <option value="true" selected>Да (показывает полный путь)</option>
-                    <option value="false">Нет (показывает путь до области)</option>
-                </select>
-
-                <label>Время в секундах для взаимодействия (опционально):</label>
-                <input type="number" name="move_to[cooldown]" placeholder="По умолчанию: 0" data-label="Кулдаун">
-
-                <label>Текст завершения (опционально):</label>
-                <textarea name="move_to[completion_text]" placeholder="Сообщение при завершении" data-label="Текст завершения"></textarea>
-            </div>
-        </fieldset>
-
-        <!-- награды (опционально) -->
-        <fieldset data-collapsed="true">
-            <legend>
-                Награды (опционально)
-                <button type="button" class="toggle-fieldset-btn" aria-label="Свернуть поле">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </legend>
-            <div class="fieldset-content">
-                <fieldset>
-                    <legend>
-                        Получаемый предмет по завершению (опционально)
-                    </legend>
-                    <div class="fieldset-content">
-                        <label>ID:</label>
-                        <input type="number" name="move_to[pick_up_item][id]" placeholder="ID предмета" data-label="ID предмета для подбора">
-
-                        <label>Количество:</label>
-                        <input type="number" name="move_to[pick_up_item][value]" placeholder="Количество" data-label="Количество предмета для подбора">
-                    </div>
-                </fieldset>
-            </div>
-        </fieldset>
-
         <!-- задачи (опционально) -->
         <fieldset data-collapsed="true">
             <legend>
-                Задачи (опционально)
+                Задачи
                 <button type="button" class="toggle-fieldset-btn" aria-label="Свернуть поле">
                     <i class="fas fa-chevron-down"></i>
                 </button>
             </legend>
             <div class="fieldset-content">
-                <fieldset>
-                    <legend>
-                        Требуемый предмет для завершения (опционально)
-                    </legend>
-                    <div class="fieldset-content">
-                        <label>ID:</label>
-                        <input type="number" name="move_to[required_item][id]" placeholder="ID предмета" data-label="ID требуемого предмета">
+				<select name="move_to[mode]" data-label="Режим" data-depends-on="move_to[mode]">
+					<option value="move" selected>По умолчанию: Просто встать</option>
+					<option value="move_press">Требуется нажать</option>
+					<option value="move_follow_press">Требуется навестись и нажать</option>
+					<option value="defeat_bot">Требуется победить моба</option>
+				</select>
 
-                        <label>Количество:</label>
-                        <input type="number" name="move_to[required_item][value]" placeholder="Количество" data-label="Количество требуемого предмета">
-                    </div>
-                </fieldset>
+				<div class="coordinates-mode" data-show-for="move_follow_press">
+					<label>Координата X:</label>
+					<input type="number" name="move_to[interactive][x]" required placeholder="Интерактивная X" data-label="Интерактивная X">
+				
+					<label>Координата Y:</label>
+					<input type="number" name="move_to[interactive][y]" required placeholder="Интерактивная Y" data-label="Интерактивная Y">
+				</div>
+				<div class="defeatbot-mode" data-show-for="defeat_bot">
+					<label>ID:</label>
+					<input type="number" name="move_to[defeat_bot][id]" required placeholder="ID бота" data-label="ID бота для победы">
 
-                <fieldset>
-                    <legend>
-                        Требуется победить бота (опционально)
-                    </legend>
-                    <div class="fieldset-content">
-                        <label>ID:</label>
-                        <input type="number" name="move_to[defeat_bot][id]" placeholder="ID бота" data-label="ID бота для победы">
+					<label>Сила атрибута:</label>
+					<input type="number" name="move_to[defeat_bot][attribute_power]" required placeholder="По умолчанию: 10" data-label="Сила атрибута бота">
 
-                        <label>Сила атрибута:</label>
-                        <input type="number" name="move_to[defeat_bot][attribute_power]" placeholder="По умолчанию: 10" data-label="Сила атрибута бота">
+					<label>ID мира (опционально):</label>
+					<input type="number" name="move_to[defeat_bot][world_id]" placeholder="По умолчанию: Текущий мир бота" data-label="ID мира">
+				</div>
+				<div class "other-mode" data-show-for="move,move_press,move_follow_press">
+					<label>Время в секундах для взаимодействия (опционально):</label>
+					<input type="number" name="move_to[cooldown]" placeholder="По умолчанию: 0" data-label="Кулдаун">
+					
+					<fieldset>
+						<legend>Необходимый предмет для завершения (опционально)</legend>
+						<div class="fieldset-content">
+							<label>ID предмета:</label>
+							<input type="number" name="move_to[required_item][id]" placeholder="ID предмета" data-label="ID требуемого предмета">
 
-                        <label>Рассеивание атрибута:</label>
-                        <input type="number" name="move_to[defeat_bot][attribute_spread]" placeholder="По умолчанию: 0" data-label="Рассеивание атрибута бота">
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>
-                        Требуется взаимодействие мышкой (опционально)
-                    </legend>
-                    <div class="fieldset-content">
-                        <label>Координата X:</label>
-                        <input type="number" name="move_to[interactive][x]" placeholder="Интерактивная X" data-label="Интерактивная X">
-
-                        <label>Координата Y:</label>
-                        <input type="number" name="move_to[interactive][y]" placeholder="Интерактивная Y" data-label="Интерактивная Y">
-                    </div>
-                </fieldset>
+							<label>Количество:</label>
+							<input type="number" name="move_to[required_item][value]" placeholder="Количество" data-label="Количество требуемого предмета">
+						</div>
+					</fieldset>
+				</div>
             </div>
         </fieldset>
+		
+        <fieldset data-collapsed="true">
+			<legend>
+				Получаемый предмет по завершению (опционально)
+				<button type="button" class="toggle-fieldset-btn" aria-label="Свернуть поле">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+			</legend>
+			<div class="fieldset-content">
+				<label>ID:</label>
+				<input type="number" name="move_to[pick_up_item][id]" placeholder="ID предмета" data-label="ID предмета для подбора">
+
+				<label>Количество:</label>
+				<input type="number" name="move_to[pick_up_item][value]" placeholder="Количество" data-label="Количество предмета для подбора">
+			</div>
+		</fieldset>
     </template>
 </body>
 </html>

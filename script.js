@@ -1,551 +1,613 @@
-document.addEventListener('DOMContentLoaded', () => 
+
+class JSONEditor 
 {
-	class JSONEditor 
+	constructor() 
 	{
-		constructor() 
+		this.form = document.getElementById('jsonForm');
+		this.jsonOutput = document.getElementById('jsonOutput');
+		this.addButtons = document.querySelectorAll('.add-btn');
+		this.loadButton = document.querySelector('.load-btn');
+		this.itemTemplate = document.getElementById('item-template');
+		this.templates = {};
+		this.initializeTemplates();
+		this.initializeLoadButton();
+		this.initializeAddButtons();
+		this.initializeSections();
+		this.initializeSortable();
+		this.initializeEventListeners();
+		this.generateJSON();
+	}
+	
+	initializeTemplates() 
+	{
+		document.querySelectorAll('[id$="-template"]').forEach(template => 
 		{
-			this.form = document.getElementById('jsonForm');
-			this.jsonOutput = document.getElementById('jsonOutput');
-			this.addButtons = document.querySelectorAll('.add-btn');
-			this.loadButton = document.querySelector('.load-btn');
-			this.itemTemplate = document.getElementById('item-template');
-			this.templates = {};
-			this.initializeTemplates();
-			this.initializeLoadButton();
-			this.initializeAddButtons();
-			this.initializeSections();
-			this.initializeSortable();
-			this.initializeEventListeners();
-			this.generateJSON();
+			const templateId = template.id.replace('-template', '');
+			this.templates[templateId] = template;
+		});
+	}
+
+	initializeLoadButton() 
+	{
+		if(!this.loadButton) 
+		{
+			console.warn('Load button not found. Skipping initialization.');
+			return;
 		}
-
-		initializeTemplates() 
+		
+		this.loadButton.addEventListener('click', () => 
 		{
-			document.querySelectorAll('[id$="-template"]').forEach(template => 
-			{
-				const templateId = template.id.replace('-template', '');
-				this.templates[templateId] = template;
-			});
-		}
+			this.showJSONInputModal();
+		});
+	}
 
-		initializeLoadButton() 
+	initializeAddButtons() 
+	{
+		this.addButtons.forEach(button => 
 		{
-			if(!this.loadButton) 
+			button.addEventListener('click', () => 
 			{
-				console.warn('Load button not found. Skipping initialization.');
-				return;
-			}
-			
-			this.loadButton.addEventListener('click', () => 
-			{
-				this.showJSONInputModal();
-			});
-		}
-
-		initializeAddButtons() 
-		{
-			this.addButtons.forEach(button => 
-			{
-				button.addEventListener('click', () => 
-				{
-					const sectionType = button.getAttribute('data-add-btn');
-					this.addItem(sectionType);
-					this.generateJSON();
-				});
-			});
-		}
-
-		initializeSections() 
-		{
-			const sectionHeaders = document.querySelectorAll('.section-header');
-			sectionHeaders.forEach(header => 
-			{
-				header.addEventListener('click', () => 
-				{
-					this.toggleSection(header);
-				});
-			});
-		}
-
-		toggleSection(header) 
-		{
-			const sectionContent = header.nextElementSibling;
-			const toggleBtn = header.querySelector('.toggle-btn');
-			const isVisible = sectionContent.style.display === 'block';
-
-			if(isVisible) 
-			{
-				sectionContent.style.display = 'none';
-				toggleBtn.classList.remove('rotate');
-			} 
-			else 
-			{
-				sectionContent.style.display = 'block';
-				toggleBtn.classList.add('rotate');
-			}
-		}
-
-		addItem(sectionType)
-		{
-			const container = document.querySelector(`.${sectionType}.items-container`);
-			const template = this.templates[sectionType];
-			if(!template) 
-				return;
-
-			const clone = this.itemTemplate.content.cloneNode(true);
-			const itemContent = clone.querySelector('.item-content');
-			const specificFields = template.content.cloneNode(true);
-
-			specificFields.querySelectorAll('fieldset').forEach(fieldset => 
-			{
-				const isCollapsed = fieldset.getAttribute('data-collapsed') === 'true';
-				if(isCollapsed) 
-				{
-					fieldset.classList.add('collapsed');
-				}
-				else 
-				{
-					fieldset.classList.remove('collapsed');
-				}
-			});
-
-			itemContent.appendChild(specificFields);
-			container.appendChild(clone);
-			this.updateItemNumbers(container);
-			this.generateJSON();
-		}
-
-		initializeSortable() 
-		{
-			document.querySelectorAll('.items-container').forEach(container => 
-			{
-				if(!container.dataset.sortableInitialized) 
-				{
-					new Sortable(container, 
-					{
-						animation: 150,
-						handle: '.drag-handle',
-						draggable: '.item',
-						ghostClass: 'sortable-ghost',
-						chosenClass: 'sortable-chosen',
-						onEnd: () => 
-						{
-							this.updateItemNumbers(container);
-							this.generateJSON();
-						}
-					});
-					container.dataset.sortableInitialized = 'true';
-				}
-			});
-		}
-
-		initializeEventListeners() 
-		{
-			this.form.addEventListener('click', (event) => 
-			{
-				const toggleItemBtn = event.target.closest('.toggle-item-btn');
-				if(toggleItemBtn) 
-				{
-					this.toggleItem(toggleItemBtn);
-				}
-
-				const removeBtn = event.target.closest('.remove-btn');
-				if(removeBtn) 
-				{
-					this.removeItem(removeBtn);
-				}
-
-				const toggleFieldsetBtn = event.target.closest('.toggle-fieldset-btn');
-				if(toggleFieldsetBtn) 
-				{
-					this.toggleFieldset(toggleFieldsetBtn);
-				}
-			});
-
-			this.form.addEventListener('input', (event) => 
-			{
-				const target = event.target;
-				this.validateField(target);
+				const sectionType = button.getAttribute('data-add-btn');
+				this.addItem(sectionType);
 				this.generateJSON();
-
-				const item = target.closest('.item');
-				if(item) 
-				{
-					this.updateSummary(item);
-				}
 			});
-		}
+		});
+	}
 
-		toggleItem(button) 
+	initializeSections() 
+	{
+		const sectionHeaders = document.querySelectorAll('.section-header');
+		sectionHeaders.forEach(header => 
 		{
-			const item = button.closest('.item');
-			const content = item.querySelector('.item-content');
-			const isCollapsed = content.classList.contains('collapsed');
+			header.addEventListener('click', () => 
+			{
+				this.toggleSection(header);
+			});
+		});
+	}
 
+	toggleSection(header) 
+	{
+		const sectionContent = header.nextElementSibling;
+		const toggleBtn = header.querySelector('.toggle-btn');
+		const isVisible = sectionContent.style.display === 'block';
+
+		if(isVisible) 
+		{
+			sectionContent.style.display = 'none';
+			toggleBtn.classList.remove('rotate');
+		} 
+		else 
+		{
+			sectionContent.style.display = 'block';
+			toggleBtn.classList.add('rotate');
+		}
+	}
+
+	initializeSortable() 
+	{
+		document.querySelectorAll('.items-container').forEach(container => 
+		{
+			if(!container.dataset.sortableInitialized) 
+			{
+				new Sortable(container, 
+				{
+					animation: 150,
+					handle: '.drag-handle',
+					draggable: '.item',
+					ghostClass: 'sortable-ghost',
+					chosenClass: 'sortable-chosen',
+					onEnd: () => 
+					{
+						this.updateItemNumbers(container);
+						this.generateJSON();
+					}
+				});
+				container.dataset.sortableInitialized = 'true';
+			}
+		});
+	}
+
+	initializeEventListeners() 
+	{
+		this.form.addEventListener('click', (event) => 
+		{
+			const toggleItemBtn = event.target.closest('.toggle-item-btn');
+			if(toggleItemBtn) 
+			{
+				this.toggleItem(toggleItemBtn);
+			}
+
+			const removeBtn = event.target.closest('.remove-btn');
+			if(removeBtn) 
+			{
+				this.removeItem(removeBtn);
+			}
+
+			const toggleFieldsetBtn = event.target.closest('.toggle-fieldset-btn');
+			if(toggleFieldsetBtn) 
+			{
+				this.toggleFieldset(toggleFieldsetBtn);
+			}
+		});
+
+		this.form.addEventListener('input', (event) => 
+		{
+			const target = event.target;
+			this.validateField(target);
+			this.generateJSON();
+
+			const item = target.closest('.item');
+			if(item) 
+			{
+				this.updateSummary(item);
+			}
+		});
+	}
+
+	toggleItem(button) 
+	{
+		const item = button.closest('.item');
+		const content = item.querySelector('.item-content');
+		const isCollapsed = content.classList.contains('collapsed');
+
+		if(isCollapsed) 
+		{
+			content.classList.remove('collapsed');
+			button.innerHTML = '<i class="fas fa-chevron-down"></i>';
+		} 
+		else 
+		{
+			content.classList.add('collapsed');
+			button.innerHTML = '<i class="fas fa-chevron-up"></i>';
+		}
+	}
+
+	toggleFieldset(button) 
+	{
+		const fieldset = button.closest('fieldset');
+		fieldset.classList.toggle('collapsed');
+	}
+	
+	addItem(sectionType)
+	{
+		const container = document.querySelector(`.${sectionType}.items-container`);
+		const template = this.templates[sectionType];
+		if(!template) 
+			return;
+
+		const clone = this.itemTemplate.content.cloneNode(true);
+		const itemContent = clone.querySelector('.item-content');
+		const specificFields = template.content.cloneNode(true);
+
+		specificFields.querySelectorAll('fieldset').forEach(fieldset => 
+		{
+			const isCollapsed = fieldset.getAttribute('data-collapsed') === 'true';
 			if(isCollapsed) 
 			{
-				content.classList.remove('collapsed');
-				button.innerHTML = '<i class="fas fa-chevron-down"></i>';
+				fieldset.classList.add('collapsed');
+			}
+			else 
+			{
+				fieldset.classList.remove('collapsed');
+			}
+		});
+
+		itemContent.appendChild(specificFields);
+		container.appendChild(clone);
+		this.updateItemNumbers(container);
+		this.generateJSON();
+
+		this.updateVisibilityForContainer(container);
+
+		const newSelects = clone.querySelectorAll('select[data-depends-on]');
+		newSelects.forEach(select => 
+		{
+			select.addEventListener('change', () => this.updateVisibilityForElement(select));
+		});
+	}
+	
+	removeItem(button) 
+	{
+		const item = button.closest('.item');
+		const container = item.parentElement;
+		item.remove();
+		this.updateItemNumbers(container);
+		this.generateJSON();
+		this.updateVisibilityForContainer(container);
+	}
+
+	updateVisibilityForElement(select) 
+	{
+		const selectedValue = select.value;
+		const container = select.closest('.item');
+
+		container.querySelectorAll('[data-show-for]').forEach(element => 
+		{
+			const showForValues = element.getAttribute('data-show-for').split(',').map(value => value.trim());
+			const hideDescendants = (element) => 
+			{
+				element.style.display = 'none';
+				element.querySelectorAll('*').forEach(child => 
+				{
+					child.style.display = 'none';
+				});
+			};
+
+			if (showForValues.includes(selectedValue)) 
+			{
+				element.style.display = 'block';
+				element.querySelectorAll('*').forEach(child => 
+				{
+					child.style.display = 'block';
+				});
 			} 
 			else 
 			{
-				content.classList.add('collapsed');
-				button.innerHTML = '<i class="fas fa-chevron-up"></i>';
+				hideDescendants(element);
 			}
-		}
+		});
 
-		toggleFieldset(button) 
-		{
-			const fieldset = button.closest('fieldset');
-			fieldset.classList.toggle('collapsed');
-		}
+		this.generateJSON();
+	}
 
-		removeItem(button) 
+	updateVisibilityForContainer(container) 
+	{
+		const selects = container.querySelectorAll('select[data-depends-on]');
+		selects.forEach(select => 
 		{
-			const item = button.closest('.item');
-			const container = item.parentElement;
-			item.remove();
-			this.updateItemNumbers(container);
-			this.generateJSON();
-		}
+			select.addEventListener('change', () => this.updateVisibilityForElement(select));
+		});
 
-		updateItemNumbers(container) 
+		container.querySelectorAll('[data-show-for]').forEach(element => 
 		{
-			const items = container.querySelectorAll('.item');
-			items.forEach((item, index) => 
+			this.updateVisibilityForElement(element.closest('.item').querySelector('select[data-depends-on]'));
+		});
+	}
+
+	updateItemNumbers(container) 
+	{
+		const items = container.querySelectorAll('.item');
+		items.forEach((item, index) => 
+		{
+			const number = item.querySelector('.item-number');
+			if(number) 
 			{
-				const number = item.querySelector('.item-number');
-				if(number) 
-				{
-					number.textContent = `#${index + 1}`;
-				}
-			});
-		}
+				number.textContent = `#${index + 1}`;
+			}
+		});
+	}
 
-		updateSummary(container) 
+	updateSummary(container) 
+	{
+		if(!container) 
+			return;
+
+		const summaryDisplay = container.querySelector('.summary-display');
+		if(!summaryDisplay) 
+			return;
+
+		const fields = container.querySelectorAll('.item-content input, .item-content select, .item-content textarea');
+		const summaryData = {};
+
+		fields.forEach(field => 
 		{
-			if(!container) 
-				return;
+			const label = field.getAttribute('data-label') || 'Неизвестно';
+			let value = field.value.trim();
 
-			const summaryDisplay = container.querySelector('.summary-display');
-			if(!summaryDisplay) 
-				return;
-
-			const fields = container.querySelectorAll('.item-content input, .item-content select, .item-content textarea');
-			const summaryData = {};
-
-			fields.forEach(field => 
+			if(field.type === 'checkbox') 
 			{
-				const label = field.getAttribute('data-label') || 'Неизвестно';
-				let value = field.value.trim();
-
-				if(field.type === 'checkbox') 
-				{
-					value = field.checked ? 'Да' : 'Нет';
-				} 
-				else if(field.tagName.toLowerCase() === 'select') 
-				{
-					value = field.options[field.selectedIndex].text;
-				}
-
-				if(value) 
-				{
-					summaryData[label] = value || '—';
-				}
-			});
-
-			const summaryText = Object.entries(summaryData)
-				.map(([key, value]) => `${key}: ${value}`)
-				.join(', ');
-
-			summaryDisplay.textContent = summaryText;
-		}
-
-		validateField(field) 
-		{
-			if(field.required && !field.value.trim()) 
-			{
-				field.style.borderColor = 'red';
+				value = field.checked ? 'Да' : 'Нет';
 			} 
-			else 
+			else if(field.tagName.toLowerCase() === 'select') 
 			{
-				field.style.borderColor = '';
+				value = field.options[field.selectedIndex].text;
 			}
-		}
 
-		generateJSON() 
+			if(value) 
+			{
+				summaryData[label] = value || '—';
+			}
+		});
+
+		const summaryText = Object.entries(summaryData)
+			.map(([key, value]) => `${key}: ${value}`)
+			.join(', ');
+
+		summaryDisplay.textContent = summaryText;
+	}
+
+	validateField(field) 
+	{
+		if(field.required && !field.value.trim() && field.style.display === 'block') 
 		{
-			const jsonData = {};
+			field.style.borderColor = 'red';
+		} 
+		else 
+		{
+			field.style.borderColor = '';
+		}
+	}
 
-			// Добавление отдельных флажков вне динамических контейнеров
-			const checkboxFields = document.querySelectorAll('input[type="checkbox"]');
-			checkboxFields.forEach(checkbox => 
+	generateJSON() 
+	{
+		const jsonData = {};
+
+		// Добавление отдельных флажков вне динамических контейнеров
+		const checkboxFields = document.querySelectorAll('input[type="checkbox"]');
+		checkboxFields.forEach(checkbox => 
+		{
+			const name = checkbox.getAttribute('name');
+			if(name && checkbox.checked)
 			{
-				const name = checkbox.getAttribute('name');
-				if(name && checkbox.checked)
+				const nameParts = name.match(/\[(.*?)\]/g)?.map(part => part.replace(/\[|\]/g, '')) || [name];
+				let current = jsonData;
+				nameParts.forEach((part, index) => 
 				{
-					const nameParts = name.match(/\[(.*?)\]/g)?.map(part => part.replace(/\[|\]/g, '')) || [name];
-					let current = jsonData;
-					nameParts.forEach((part, index) => 
+					if(index === nameParts.length - 1) 
 					{
-						if(index === nameParts.length - 1) 
-						{
-							current[part] = checkbox.checked;
-						}
-						else
-						{
-							current[part] = current[part] || {};
-							current = current[part];
-						}
-					});
-				}
-			});
+						current[part] = checkbox.checked;
+					}
+					else
+					{
+						current[part] = current[part] || {};
+						current = current[part];
+					}
+				});
+			}
+		});
 
-			document.querySelectorAll('.items-container').forEach(container => 
+		document.querySelectorAll('.items-container').forEach(container => 
+		{
+			const sectionType = container.classList[0];
+			const sectionItems = [];
+
+			container.querySelectorAll('.item').forEach(item => 
 			{
-				const sectionType = container.classList[0];
-				const sectionItems = [];
+				const itemData = {};
+				let hasError = false;
 
-				container.querySelectorAll('.item').forEach(item => 
+				item.querySelectorAll('input, select, textarea').forEach(field => 
 				{
-					const itemData = {};
-					let hasError = false;
-
-					item.querySelectorAll('input, select, textarea').forEach(field => 
+                    if (field.style.display === 'none') {
+                        return;
+                    }
+					
+					const nameParts = field.getAttribute('name')?.match(/\[(.*?)\]/g)?.map(part => part.replace(/\[|\]/g, ''));
+					if(nameParts)
 					{
-						const nameParts = field.getAttribute('name')?.match(/\[(.*?)\]/g)?.map(part => part.replace(/\[|\]/g, ''));
-						if(nameParts)
+						let current = itemData;
+						nameParts.forEach((part, index) => 
 						{
-							let current = itemData;
-							nameParts.forEach((part, index) => 
+							if(index === nameParts.length - 1)
 							{
-								if(index === nameParts.length - 1)
+								// Последний ключ — сохранить значение только если оно установлено
+								if(field.type === 'checkbox')
 								{
-									// Последний ключ — сохранить значение только если оно установлено
-									if(field.type === 'checkbox')
+									if(field.checked)
 									{
-										if(field.checked)
-										{
-											current[part] = field.checked;
-										}
-										else if(field.hasAttribute('required'))
-										{
-											hasError = true;
-											field.style.borderColor = 'red';
-										}
+										current[part] = field.checked;
 									}
-									else
+									else if(field.hasAttribute('required'))
 									{
-										let value = field.value.trim();
-										if(field.type === 'number' && value !== '')
-										{
-											value = parseFloat(value);
-										}
-										if(value !== '')
-										{
-											current[part] = value;
-										} 
-										else if(field.hasAttribute('required'))
-										{
-											hasError = true;
-											field.style.borderColor = 'red';
-										}
+										hasError = true;
+										field.style.borderColor = 'red';
 									}
 								}
 								else
 								{
-									// Создать вложенный объект, если он не существует
-									current[part] = current[part] || {};
-									current = current[part];
+									let value = field.value.trim();
+									if(field.type === 'number' && value !== '')
+									{
+										value = parseFloat(value);
+									}
+									if(value !== '')
+									{
+										current[part] = value;
+									} 
+									else if(field.hasAttribute('required'))
+									{
+										hasError = true;
+										field.style.borderColor = 'red';
+									}
 								}
-							});
-						}
-					});
-
-					// Удалить пустые объекты
-					const cleanEmptyFields = (obj) => 
-					{
-						Object.keys(obj).forEach(key => 
-						{
-							if(obj[key] && typeof obj[key] === 'object')
+							}
+							else
 							{
-								cleanEmptyFields(obj[key]);
-								if(Object.keys(obj[key]).length === 0)
-								{
-									delete obj[key];
-								}
-							} 
-							else if(obj[key] === undefined || obj[key] === '')
-							{
-								delete obj[key];
+								// Создать вложенный объект, если он не существует
+								current[part] = current[part] || {};
+								current = current[part];
 							}
 						});
-					};
-
-					cleanEmptyFields(itemData);
-					if(!hasError && Object.keys(itemData).length > 0)
-					{
-						sectionItems.push(itemData);
 					}
 				});
 
-				if(sectionItems.length > 0)
+				// Удалить пустые объекты
+				const cleanEmptyFields = (obj) => 
 				{
-					jsonData[sectionType] = sectionItems;
-				}
-			});
-
-			// Удаление пустых секций
-			Object.keys(jsonData).forEach(key => 
-			{
-				if(Array.isArray(jsonData[key]) && jsonData[key].length === 0) {
-					delete jsonData[key];
-				}
-			});
-
-			this.jsonOutput.textContent = JSON.stringify(jsonData, null, 4);
-		}
-
-		showJSONInputModal()
-		{
-			if(document.querySelector('.json-input-modal'))
-				return;
-
-			const modal = document.createElement('div');
-			modal.className = 'json-input-modal';
-			modal.style.position = 'fixed';
-			modal.style.top = '50%';
-			modal.style.left = '50%';
-			modal.style.transform = 'translate(-50%, -50%)';
-			modal.style.background = '#fff';
-			modal.style.padding = '20px';
-			modal.style.borderRadius = '8px';
-			modal.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-			modal.style.zIndex = '1000';
-
-			const header = document.createElement('h3');
-			header.textContent = 'Load JSON';
-			header.style.textAlign = 'center';
-			modal.appendChild(header);
-
-			const textarea = document.createElement('textarea');
-			textarea.style.width = '100%';
-			textarea.style.height = '150px';
-			textarea.placeholder = 'Paste your JSON here';
-			modal.appendChild(textarea);
-
-			const buttonsContainer = document.createElement('div');
-			buttonsContainer.style.display = 'flex';
-			buttonsContainer.style.justifyContent = 'space-between';
-			buttonsContainer.style.marginTop = '15px';
-
-			const loadButton = document.createElement('button');
-			loadButton.textContent = 'Load';
-			loadButton.style.padding = '10px';
-			loadButton.addEventListener('click', () => 
-			{
-				try
-				{
-					const jsonData = JSON.parse(textarea.value);
-					this.generateDynamicUI(jsonData);
-					modal.remove();
-				}
-				catch (error)
-				{
-					alert('Invalid JSON');
-				}
-			});
-
-			const cancelButton = document.createElement('button');
-			cancelButton.textContent = 'Cancel';
-			cancelButton.style.padding = '10px';
-			cancelButton.addEventListener('click', () => 
-			{
-				modal.remove();
-			});
-
-			buttonsContainer.appendChild(loadButton);
-			buttonsContainer.appendChild(cancelButton);
-			modal.appendChild(buttonsContainer);
-
-			document.body.appendChild(modal);
-		}
-
-		generateDynamicUI(jsonData)
-		{
-			// Очистить текущие контейнеры
-			document.querySelectorAll('.items-container').forEach(container => 
-			{
-				container.innerHTML = '';
-			});
-
-			Object.entries(jsonData).forEach(([sectionType, items]) => 
-			{
-				if(Array.isArray(items))
-				{
-					const container = document.querySelector(`.${sectionType}.items-container`);
-					if(container)
+					Object.keys(obj).forEach(key => 
 					{
-						items.forEach(itemData => 
+						if(obj[key] && typeof obj[key] === 'object')
 						{
-							const clone = this.itemTemplate.content.cloneNode(true);
-							const itemContent = clone.querySelector('.item-content');
-
-							const template = this.templates[sectionType];
-							if(template)
+							cleanEmptyFields(obj[key]);
+							if(Object.keys(obj[key]).length === 0)
 							{
-								const specificFields = template.content.cloneNode(true);
-
-								// Заполнить поля значениями
-								specificFields.querySelectorAll('input, select, textarea').forEach(field => 
-								{
-									const nameParts = field.getAttribute('name')?.match(/\[(.*?)\]/g)?.map(part => part.replace(/[\[\]]/g, ''));
-									if(nameParts)
-									{
-										let value = itemData;
-										nameParts.forEach(part => 
-										{
-											if(value && typeof value === 'object')
-											{
-												value = value[part];
-											}
-										});
-										if(field.type === 'checkbox')
-										{
-											field.checked = Boolean(value);
-										}
-										else if(value !== undefined)
-										{
-											field.value = value;
-										}
-									}
-								});
-
-								itemContent.appendChild(specificFields);
-								container.appendChild(clone);
+								delete obj[key];
 							}
-						});
-					}
-				}
-			});
+						} 
+						else if(obj[key] === undefined || obj[key] === '')
+						{
+							delete obj[key];
+						}
+					});
+				};
 
-			// Collapse all items and update summaries
-			document.querySelectorAll('.toggle-item-btn').forEach(button => 
-			{
-				const item = button.closest('.item');
-				const content = item.querySelector('.item-content');
-				if(!content.classList.contains('collapsed'))
+				cleanEmptyFields(itemData);
+				if(!hasError && Object.keys(itemData).length > 0)
 				{
-					content.classList.add('collapsed');
-					button.innerHTML = '<i class="fas fa-chevron-up"></i>';
+					sectionItems.push(itemData);
 				}
-				this.updateSummary(item);
 			});
 
-			this.initializeSortable();
-			this.generateJSON();
-		}
+			if(sectionItems.length > 0)
+			{
+				jsonData[sectionType] = sectionItems;
+			}
+		});
+
+		// Удаление пустых секций
+		Object.keys(jsonData).forEach(key => 
+		{
+			if(Array.isArray(jsonData[key]) && jsonData[key].length === 0) {
+				delete jsonData[key];
+			}
+		});
+
+		this.jsonOutput.textContent = JSON.stringify(jsonData, null, 4);
 	}
 
-	new JSONEditor();
-});
+	showJSONInputModal()
+	{
+		if(document.querySelector('.json-input-modal'))
+			return;
+
+		const modal = document.createElement('div');
+		modal.className = 'json-input-modal';
+		modal.style.position = 'fixed';
+		modal.style.top = '50%';
+		modal.style.left = '50%';
+		modal.style.transform = 'translate(-50%, -50%)';
+		modal.style.background = '#fff';
+		modal.style.padding = '20px';
+		modal.style.borderRadius = '8px';
+		modal.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+		modal.style.zIndex = '1000';
+
+		const header = document.createElement('h3');
+		header.textContent = 'Load JSON';
+		header.style.textAlign = 'center';
+		modal.appendChild(header);
+
+		const textarea = document.createElement('textarea');
+		textarea.style.width = '100%';
+		textarea.style.height = '150px';
+		textarea.placeholder = 'Paste your JSON here';
+		modal.appendChild(textarea);
+
+		const buttonsContainer = document.createElement('div');
+		buttonsContainer.style.display = 'flex';
+		buttonsContainer.style.justifyContent = 'space-between';
+		buttonsContainer.style.marginTop = '15px';
+
+		const loadButton = document.createElement('button');
+		loadButton.textContent = 'Load';
+		loadButton.style.padding = '10px';
+		loadButton.addEventListener('click', () => 
+		{
+			try
+			{
+				const jsonData = JSON.parse(textarea.value);
+				this.generateDynamicUI(jsonData);
+				modal.remove();
+			}
+			catch (error)
+			{
+				alert('Invalid JSON');
+			}
+		});
+
+		const cancelButton = document.createElement('button');
+		cancelButton.textContent = 'Cancel';
+		cancelButton.style.padding = '10px';
+		cancelButton.addEventListener('click', () => 
+		{
+			modal.remove();
+		});
+
+		buttonsContainer.appendChild(loadButton);
+		buttonsContainer.appendChild(cancelButton);
+		modal.appendChild(buttonsContainer);
+
+		document.body.appendChild(modal);
+	}
+
+	generateDynamicUI(jsonData)
+	{
+		// Очистить текущие контейнеры
+		document.querySelectorAll('.items-container').forEach(container => 
+		{
+			container.innerHTML = '';
+		});
+
+		Object.entries(jsonData).forEach(([sectionType, items]) => 
+		{
+			if(Array.isArray(items))
+			{
+				const container = document.querySelector(`.${sectionType}.items-container`);
+				if(container)
+				{
+					items.forEach(itemData => 
+					{
+						const clone = this.itemTemplate.content.cloneNode(true);
+						const itemContent = clone.querySelector('.item-content');
+
+						const template = this.templates[sectionType];
+						if(template)
+						{
+							const specificFields = template.content.cloneNode(true);
+
+							// Заполнить поля значениями
+							specificFields.querySelectorAll('input, select, textarea').forEach(field => 
+							{
+								const nameParts = field.getAttribute('name')?.match(/\[(.*?)\]/g)?.map(part => part.replace(/[\[\]]/g, ''));
+								if(nameParts)
+								{
+									let value = itemData;
+									nameParts.forEach(part => 
+									{
+										if(value && typeof value === 'object')
+										{
+											value = value[part];
+										}
+									});
+									if(field.type === 'checkbox')
+									{
+										field.checked = Boolean(value);
+									}
+									else if(value !== undefined)
+									{
+										field.value = value;
+									}
+								}
+							});
+
+							itemContent.appendChild(specificFields);
+							container.appendChild(clone);
+						}
+					});
+				}
+			}
+		});
+
+		// Collapse all items and update summaries
+		document.querySelectorAll('.toggle-item-btn').forEach(button => 
+		{
+			const item = button.closest('.item');
+			const content = item.querySelector('.item-content');
+			if(!content.classList.contains('collapsed'))
+			{
+				content.classList.add('collapsed');
+				button.innerHTML = '<i class="fas fa-chevron-up"></i>';
+			}
+			const container = item.parentElement;
+			this.updateVisibilityForContainer(container);
+			this.updateSummary(item);
+		});
+
+		this.initializeSortable();
+		this.generateJSON();
+	}
+}
+
+const jsonEditor = new JSONEditor();
+window.jsonEditor = jsonEditor;
